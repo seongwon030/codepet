@@ -60,3 +60,18 @@ test('detector emits the first poll even when state is unchanged (idle)', async 
   await d.poll(0); // no agent, within threshold -> idle, but first emit fires
   assert.deepEqual(emitted, ['idle']);
 });
+
+test('hook events take precedence over polling while fresh', async () => {
+  const emitted: ActivityState[] = [];
+  // process list always reports claude running (polling alone would say "running")
+  const d = new ActivityDetector(
+    async () => [{ pid: 1, cmd: 'claude code' }],
+    (s) => emitted.push(s),
+    { ...cfg, hookFreshMs: 1000 },
+    0,
+  );
+  d.noteHook('idle', 0); // a Stop hook says idle even though the process is up
+  assert.equal(await d.poll(500), 'idle'); // fresh hook wins -> stays idle
+  assert.equal(await d.poll(2000), 'running'); // hook stale -> polling resumes
+  assert.deepEqual(emitted, ['idle', 'running']);
+});

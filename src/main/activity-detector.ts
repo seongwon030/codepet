@@ -16,6 +16,8 @@ export interface DetectorConfig {
   ignorePids: number[];
   /** ms with no agent process before transitioning idle -> sleeping. */
   sleepAfterMs: number;
+  /** ms a hook/notify event stays authoritative before polling resumes (default 45000). */
+  hookFreshMs?: number;
 }
 
 /**
@@ -65,6 +67,7 @@ export class ActivityDetector {
   private lastRunningAt: number;
   private current: ActivityState = 'idle';
   private emittedOnce = false;
+  private lastHookAt = Number.NEGATIVE_INFINITY;
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -80,8 +83,22 @@ export class ActivityDetector {
     return this.current;
   }
 
+  /** Apply a precise state from a hook/notify event; authoritative over polling. */
+  noteHook(state: ActivityState, now: number): void {
+    this.lastHookAt = now;
+    if (state !== this.current || !this.emittedOnce) {
+      this.current = state;
+      this.emittedOnce = true;
+      this.onChange(state);
+    }
+  }
+
   /** Poll once with an explicit `now` (ms). Returns the resolved state. */
   async poll(now: number): Promise<ActivityState> {
+    // While a recent hook event is fresh, trust it and skip process polling.
+    if (this.emittedOnce && now - this.lastHookAt < (this.cfg.hookFreshMs ?? 45000)) {
+      return this.current;
+    }
     let procs: ProcLike[] = [];
     try {
       procs = await this.list();

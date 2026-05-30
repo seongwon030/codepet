@@ -7,12 +7,18 @@ import {
   Tray,
   Menu,
   nativeImage,
+  dialog,
 } from 'electron';
 import * as path from 'path';
 import psList from 'ps-list';
 import { createOverlayWindow } from './overlay-window';
 import { ActivityDetector, DEFAULT_PATTERNS, type ProcLike } from './activity-detector';
+import { HookServer } from './hook-server';
+import { connectClaude, disconnectClaude, isClaudeConnected, ClaudeSettingsPath } from './connector';
 import { IpcChannels, type Rect, type RosterEntry } from '../shared/types';
+
+/** Fixed localhost port for the hook server (embedded in installed hook commands). */
+const HOOK_PORT = 38917;
 
 /** Per-display overlay with its own click-through / drag state. */
 interface OverlayCtx {
@@ -24,6 +30,7 @@ interface OverlayCtx {
 
 let overlays: OverlayCtx[] = [];
 let detector: ActivityDetector | null = null;
+let hookServer: HookServer | null = null;
 let tray: Tray | null = null;
 let paused = false;
 let roster: RosterEntry[] = [];
@@ -120,6 +127,16 @@ function buildTrayMenu(): Menu {
         tray?.setContextMenu(buildTrayMenu());
       },
     },
+    { type: 'separator' },
+    isClaudeConnected()
+      ? {
+          label: 'Disconnect Claude Code',
+          click: () => {
+            disconnectClaude();
+            tray?.setContextMenu(buildTrayMenu());
+          },
+        }
+      : { label: 'Connect Claude Code…', click: onConnectClaude },
     {
       label: 'Launch at Login',
       type: 'checkbox',
@@ -149,6 +166,24 @@ function updateTrayIcon(petId: string): void {
   if (!tray || !petId) return;
   const img = nativeImage.createFromPath(path.join(__dirname, '../assets/pets', `${petId}.png`));
   if (!img.isEmpty()) tray.setImage(img.resize({ height: 18 }));
+}
+
+/** Tray action: install Claude Code hooks after explicit consent. */
+function onConnectClaude(): void {
+  const choice = dialog.showMessageBoxSync({
+    type: 'question',
+    buttons: ['Connect', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+    message: 'Connect Desktop Pet to Claude Code?',
+    detail:
+      `This adds hooks to ${ClaudeSettingsPath} (a backup is saved alongside it) so the pet ` +
+      `reacts precisely to your Claude sessions — typing, tool use, and done. You can disconnect anytime.`,
+  });
+  if (choice !== 0) return;
+  const res = connectClaude(HOOK_PORT);
+  if (!res.ok) dialog.showErrorBox('Connect failed', res.error ?? 'Unknown error');
+  tray?.setContextMenu(buildTrayMenu());
 }
 
 app.whenReady().then(() => {
@@ -207,6 +242,17 @@ app.whenReady().then(() => {
   );
   detector.start(2000);
 
+  // Local hook server for precise Claude/Codex states (used when connected via tray).
+  hookServer = new HookServer((state) => {
+    detector?.noteHook(state, Date.now());
+  });
+  hookServer.start(HOOK_PORT).then((ok) => {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[desktop-pet] hook server 127.0.0.1:${HOOK_PORT}: ${ok ? 'listening' : 'port busy'}`,
+    );
+  });
+
   // Global quit hotkey (also available via the tray): Cmd/Ctrl+Shift+P.
   globalShortcut.register('CommandOrControl+Shift+P', () => app.quit());
 
@@ -222,5 +268,6 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   if (pollTimer) clearInterval(pollTimer);
   detector?.stop();
+  hookServer?.stop();
   globalShortcut.unregisterAll();
 });

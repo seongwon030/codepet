@@ -4,9 +4,10 @@ A macOS desktop pet that roams your wallpaper and **reacts to your Claude Code /
 sessions** — when an agent is running, the pet gets to work; when things go quiet, it
 naps. Built with Electron + TypeScript.
 
-> Status: **v0.1 (MVP)** — **5 pets** (cat, dog, duck, seal, whale) roaming together,
-> primary display, process-based session detection. Roadmap (precise hook integration,
-> multi-monitor, code signing) in `docs/superpowers/specs/2026-05-30-desktop-pet-design.md`.
+> Status: **v0.1+** — **5 selectable pets** (cat, dog, duck, seal, whale), **multi-monitor**,
+> process-based detection **plus opt-in precise Claude Code hook integration**. Remaining
+> roadmap: Codex hooks, code signing/notarization
+> (`docs/superpowers/specs/2026-05-30-desktop-pet-design.md`).
 
 ## Features (v0.1)
 
@@ -70,12 +71,19 @@ To add or replace art, see **[ASSETS.md](ASSETS.md)** — a 512px PNG works grea
 > ⚠️ **Attribution:** the bundled icons are Flaticon "free" icons, which **require
 > attribution** before public distribution. See **[CREDITS.md](CREDITS.md)**.
 
-## How session detection works
+## Session detection — two layers
 
-v0.1 polls the process list (via `ps-list`) and matches `claude` / `codex` by command line.
-This is a zero-config heuristic. The precise version — a small connector that hooks Claude
-Code / Codex events for exact "typing / tool / done" states — is the v0.2 feature
-(`Connector`), per the design doc.
+1. **Zero-config (default):** polls the process list (`ps-list`) and matches `claude` / `codex`
+   by command line. Coarse "running vs idle."
+2. **Precise (opt-in):** tray → **Connect Claude Code** installs hooks into
+   `~/.claude/settings.json` (backed up to `…/settings.json.desktop-pet-backup`; reversible via
+   **Disconnect Claude Code**). The pet then reacts to exact events — prompt submitted →
+   *working*, tool running → *tool*, response done → *idle* — delivered to a localhost-only
+   server on `127.0.0.1:38917`. Fresh hook events take precedence over polling.
+
+Connecting only edits your settings after you confirm a dialog, merges non-destructively
+(your existing hooks are preserved), and is fully removable. Codex precise integration (its
+`notify` only signals turn-complete) is a follow-up.
 
 ## Privacy
 

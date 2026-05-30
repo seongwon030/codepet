@@ -129,3 +129,30 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
   click sends SelectPet [id] (one). Renderer default showPets([ROSTER[0].id]) = cat only.
   (Renderer showPets(ids[]) contract unchanged; main just sends a single-id array.)
 - Verified: build 0 errors, boot RUNTIME=CLEAN "roster 5, showing 1", tray ready.
+
+## Iteration 9 (#4: multi-monitor + drag fix + tray icon)
+- Drag stutter fixed: DragLock IPC; main poller stops toggling click-through during drag.
+- Tray icon reflects current pet (updateTrayIcon resizes pet PNG ~18px).
+- Multi-monitor: one overlay window PER display (OverlayCtx[]); per-window click-through/drag;
+  ReportBounds/DragLock keyed by sender id; activity/selection/pause broadcast; rebuild on
+  display add/remove. Degrades to 1 window on single display (verified). True multi-monitor
+  needs a 2nd monitor to eyeball.
+
+## Iteration 10 (#4: precise Claude Code hook integration)
+- hook-server.ts: localhost HTTP server on 127.0.0.1:38917, POST /event {source,kind} ->
+  ActivityState; capped body; 127.0.0.1-only.
+- connector.ts: connectClaude/disconnectClaude/isClaudeConnected. Installs hooks into
+  ~/.claude/settings.json (UserPromptSubmit->working, PreToolUse->tool[matcher], PostToolUse->
+  working, Stop/SessionStart/SessionEnd->idle). Backs up once, merges (preserves user hooks),
+  surgical removal by MARKER, idempotent. Path-injectable for tests.
+- detector.noteHook(): hook events authoritative over polling while fresh (hookFreshMs default
+  45s). lastHookAt inits to -Infinity (fix: 0 caused false freshness with small test timestamps).
+- main: tray "Connect Claude Code…" (consent dialog) / "Disconnect Claude Code"; hook server
+  feeds detector.noteHook.
+- VERIFIED LIVE: booted app, POSTed working/tool/idle to the server -> activity sequence
+  running->working->tool->idle (hooks override polling). Connector logic: 3 temp-file unit tests.
+  Total tests 20/20.
+- NOTE: connect edits the user's real ~/.claude/settings.json only on explicit tray click +
+  dialog confirm (backup + reversible). Not auto-run anywhere.
+- TODO (follow-up): Codex notify connector; menu-bar dark-mode contrast for black pets;
+  rebuild .dmg for the new feature set.
