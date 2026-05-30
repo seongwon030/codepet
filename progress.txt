@@ -46,3 +46,20 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
 - electron@33 + Node 20 dev shell works fine.
 - Boot log is a cheap, high-signal verifier for an Electron GUI app you can't fully drive headlessly:
   launch with ELECTRON_ENABLE_LOGGING, grep main console.log + renderer CONSOLE errors, auto-kill.
+
+## Iteration 2 (US-003, US-004)
+- US-003 done: state-machine.ts + movement.ts pure logic, 11 unit tests pass.
+- US-004 done: added esbuild to bundle the renderer (src/renderer/index.ts -> dist/renderer/bundle.js).
+  tsc still compiles all src for type-check + node tests; esbuild only builds the browser bundle.
+  Retired the spike box; renderer is now a full-screen <canvas> driven by PetEngine.
+  - sprite.ts: SpriteSource interface; ProceduralSprite (code-drawn cat placeholder) + SheetSprite
+    (loads user PNG grid, animForState maps PetState->AnimName).
+  - pet.ts: Pet entity (pos/facing/clock); update() uses tested movement helpers; wander loop.
+  - pet-engine.ts: rAF while any pet active; setTimeout @8fps when all idle/sleeping (battery);
+    throttled bounds reporting (~10/s) for click-through.
+  - Manifest schema (PetManifest) in shared/types; index.ts builds pets from a ROSTER via makeSprite.
+- ASSET DECISION (user): user will provide PNGs (512px ok). v0.1 ships procedural placeholder cat.
+  ASSETS.md documents the spec: 4x4 grid sheet (128px frames) OR single static 512px image.
+- Verified: tsc 0 errors, 11/11 tests, boot ENGINE_OK/PRELOAD=OK/RENDERER=CLEAN ("1 pet").
+- NOTE: pet self-sleep via idleTimeout won't fire (wander re-triggers first by design) — sleeping is
+  driven by the activity detector (US-005). Intentional.
