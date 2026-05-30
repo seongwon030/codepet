@@ -1,0 +1,14 @@
+appId: com.desktoppet.app
+productName: Desktop Pet
+directories:
+  output: release
+files:
+  - dist/**/*
+  - package.json
+mac:
+  target:
+    - dmg
+  category: public.app-category.entertainment
+  # LSUIElement=1 -> menu-bar agent app, no Dock icon
+  extendInfo:
+    LSUIElement: 1

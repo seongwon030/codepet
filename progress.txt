@@ -1,0 +1,48 @@
+desktop-pet — Ralph progress log
+=================================
+
+Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-desktop-pet-design.md)
+
+## Iteration 1 (in progress)
+- Refined PRD into 8 task-specific stories (US-001..US-008).
+- US-001 scaffold + US-002 spike implemented together (spike needs the Electron scaffold).
+- Stack: Electron + TypeScript (CommonJS), no bundler. Renderer = plain script (no import/export)
+  loaded via <script>; preload uses contextBridge for IPC.
+- Pinned CJS-compatible deps to avoid ESM/CJS friction: ps-list@^7 (v8 is ESM), electron-store@^8 (v9+ ESM).
+- Node: dev shell has v20.19.5; engines.node set to ">=20" (Node 24 acceptable per user).
+
+### Key design constraints honored
+- Click-through hover via MAIN-process screen.getCursorScreenPoint() polling (NOT renderer mousemove,
+  which is unreliable on macOS when no button is held — electron#26718).
+- Overlay: transparent + alwaysOnTop('screen-saver') + setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true})
+  applied AFTER ready-to-show; never fullscreen:true.
+- Dock hidden via app.dock.hide() (LSUIElement=1 in electron-builder for packaged build).
+
+### Known limitation
+- Interactive UX (hover toggles click-through, drag starts) requires MANUAL QA on real macOS —
+  cannot be fully automated here. Build/boot are auto-verified; interactive AC flagged for user QA.
+
+## Learnings / patterns
+- Renderer TS must avoid value-level import/export or tsc emits an `exports` reference that breaks
+  in a plain <script>. Use (window as any).petApi and inline interfaces; keep types in shared/ only
+  for main/preload.
+
+### Iteration 1 results (verified)
+- npm install OK (441 pkgs). npm run build: 0 TS errors. dist/ structure correct.
+- Boot verification (electron . for ~10s, auto-killed): RESULT=BOOT_OK, PRELOAD=OK, RENDERER=CLEAN.
+- Two real bugs found + fixed via boot log (spike-first paid off):
+  1. Preload failed: sandboxed preload cannot require('../shared/types').
+     Fix: webPreferences.sandbox=false (keep contextIsolation=true; local-only content).
+  2. Renderer SyntaxError: "Identifier 'petApi' already declared" — contextBridge exposes a global
+     named `petApi`, colliding with `const petApi` in global script scope.
+     Fix: renamed local to `bridge`.
+- US-001 PASSES (all automated criteria met).
+- US-002: automated criteria met (overlay config per spec, click-through toggle code, renderer
+  reports bounds, boots clean). REMAINING: interactive AC = manual QA on real macOS
+  (hover-no-button toggles click-through + drag starts). Needs user to run `npm start` and confirm.
+  Tracking US-002 as passes:false until that manual confirmation.
+
+### Learnings
+- electron@33 + Node 20 dev shell works fine.
+- Boot log is a cheap, high-signal verifier for an Electron GUI app you can't fully drive headlessly:
+  launch with ELECTRON_ENABLE_LOGGING, grep main console.log + renderer CONSOLE errors, auto-kill.
