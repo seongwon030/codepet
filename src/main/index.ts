@@ -25,12 +25,22 @@ let currentPetId = '';
 let interactiveRects: Rect[] = [];
 /** Whether the overlay currently ignores mouse events (click-through). */
 let clickThrough = true;
+/** While true (a drag is in progress), the poller keeps the overlay interactive. */
+let dragLocked = false;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 /** Spike core: toggle click-through based on whether the cursor is over a pet. */
 function startCursorPoller(win: BrowserWindow): void {
   pollTimer = setInterval(() => {
     if (win.isDestroyed()) return;
+    if (dragLocked) {
+      // Don't flip click-through mid-drag — it would interrupt mousemove (stutter).
+      if (clickThrough) {
+        win.setIgnoreMouseEvents(false);
+        clickThrough = false;
+      }
+      return;
+    }
     const cursor = screen.getCursorScreenPoint();
     const b = win.getBounds();
     const lx = cursor.x - b.x;
@@ -59,6 +69,7 @@ function buildTrayMenu(): Menu {
     checked: p.id === currentPetId,
     click: () => {
       currentPetId = p.id;
+      updateTrayIcon(p.id);
       sendToOverlay(IpcChannels.SelectPet, [p.id]); // show exactly one pet
     },
   }));
@@ -101,6 +112,13 @@ function createTray(): void {
   console.log('[desktop-pet] tray ready, iconEmpty=', icon.isEmpty());
 }
 
+/** Set the menu-bar icon to the current pet's image (color, ~18px). */
+function updateTrayIcon(petId: string): void {
+  if (!tray || !petId) return;
+  const img = nativeImage.createFromPath(path.join(__dirname, '../assets/pets', `${petId}.png`));
+  if (!img.isEmpty()) tray.setImage(img.resize({ height: 18 }));
+}
+
 app.whenReady().then(() => {
   // Menu-bar agent: no Dock icon. (Packaged build also sets LSUIElement=1.)
   if (process.platform === 'darwin' && app.dock) {
@@ -114,7 +132,16 @@ app.whenReady().then(() => {
   ipcMain.on(IpcChannels.Roster, (_e, list: RosterEntry[]) => {
     roster = Array.isArray(list) ? list : [];
     if (!currentPetId && roster.length) currentPetId = roster[0].id;
+    updateTrayIcon(currentPetId);
     tray?.setContextMenu(buildTrayMenu());
+  });
+
+  ipcMain.on(IpcChannels.DragLock, (_e, locked: boolean) => {
+    dragLocked = Boolean(locked);
+    if (dragLocked && overlay && !overlay.isDestroyed()) {
+      overlay.setIgnoreMouseEvents(false);
+      clickThrough = false;
+    }
   });
 
   overlay = createOverlayWindow();

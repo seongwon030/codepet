@@ -25,6 +25,8 @@ export const IpcChannels = {
   SelectPet: 'pet:select',
   /** main -> renderer: pause/resume the animation loop */
   SetPaused: 'pet:paused',
+  /** renderer -> main: keep the overlay interactive while a pet is being dragged */
+  DragLock: 'pet:dragLock',
 } as const;
 
 /** A pet entry for the tray picker. */

@@ -6,6 +6,7 @@ import type { ActivityState, PetManifest, Rect, RosterEntry } from '../shared/ty
 interface PetApi {
   reportBounds: (rects: Rect[]) => void;
   reportRoster: (roster: RosterEntry[]) => void;
+  setDragLock: (locked: boolean) => void;
   onActivity: (cb: (state: ActivityState) => void) => () => void;
   onSelectPet: (cb: (ids: string[]) => void) => () => void;
   onSetPaused: (cb: (paused: boolean) => void) => () => void;
@@ -95,6 +96,7 @@ canvas.addEventListener('mousedown', (e) => {
   dragPet = pet;
   dragOffset = { x: e.clientX - pet.pos.x, y: e.clientY - pet.pos.y };
   engine.startDrag(pet);
+  bridge.setDragLock(true); // keep overlay interactive for the whole drag
   e.preventDefault();
 });
 
@@ -110,6 +112,7 @@ window.addEventListener('mouseup', () => {
   if (!dragPet) return;
   engine.endDrag(dragPet);
   dragPet = null;
+  bridge.setDragLock(false);
 });
 
 // eslint-disable-next-line no-console

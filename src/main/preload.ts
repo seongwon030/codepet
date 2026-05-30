@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('petApi', {
   reportRoster: (roster: RosterEntry[]): void => {
     ipcRenderer.send(IpcChannels.Roster, roster);
   },
+  /** Lock the overlay interactive while dragging (prevents click-through flicker). */
+  setDragLock: (locked: boolean): void => {
+    ipcRenderer.send(IpcChannels.DragLock, locked);
+  },
   /** Subscribe to activity-state changes. Returns an unsubscribe fn. */
   onActivity: (cb: (state: ActivityState) => void): (() => void) => {
     const listener = (_e: unknown, state: ActivityState) => cb(state);
