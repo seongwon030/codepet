@@ -148,7 +148,7 @@ app.whenReady().then(() => {
   });
   detector.start(2000);
 
-  // Spike quit path (no tray yet): Cmd/Ctrl+Shift+P quits.
+  // Global quit hotkey (also available via the tray): Cmd/Ctrl+Shift+P.
   globalShortcut.register('CommandOrControl+Shift+P', () => app.quit());
 
   // eslint-disable-next-line no-console

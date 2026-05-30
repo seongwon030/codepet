@@ -33,6 +33,7 @@ export class PetEngine {
   ) {}
 
   add(pet: Pet): void {
+    pet.dispatch({ type: 'activity', state: this.lastActivity });
     this.pets.push(pet);
   }
 
