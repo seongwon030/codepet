@@ -19,7 +19,7 @@ let detector: ActivityDetector | null = null;
 let tray: Tray | null = null;
 let paused = false;
 let roster: RosterEntry[] = [];
-let visibleIds = new Set<string>();
+let currentPetId = '';
 
 /** Interactive rects (pets/box) most recently reported by the renderer. */
 let interactiveRects: Rect[] = [];
@@ -55,16 +55,11 @@ function sendToOverlay(channel: string, payload: unknown): void {
 function buildTrayMenu(): Menu {
   const petSubmenu: Electron.MenuItemConstructorOptions[] = roster.map((p) => ({
     label: p.name,
-    type: 'checkbox',
-    checked: visibleIds.has(p.id),
+    type: 'radio',
+    checked: p.id === currentPetId,
     click: () => {
-      if (visibleIds.has(p.id)) {
-        if (visibleIds.size > 1) visibleIds.delete(p.id); // keep at least one pet
-      } else {
-        visibleIds.add(p.id);
-      }
-      sendToOverlay(IpcChannels.SelectPet, [...visibleIds]);
-      tray?.setContextMenu(buildTrayMenu());
+      currentPetId = p.id;
+      sendToOverlay(IpcChannels.SelectPet, [p.id]); // show exactly one pet
     },
   }));
 
@@ -118,7 +113,7 @@ app.whenReady().then(() => {
 
   ipcMain.on(IpcChannels.Roster, (_e, list: RosterEntry[]) => {
     roster = Array.isArray(list) ? list : [];
-    if (visibleIds.size === 0) visibleIds = new Set(roster.map((p) => p.id));
+    if (!currentPetId && roster.length) currentPetId = roster[0].id;
     tray?.setContextMenu(buildTrayMenu());
   });
 

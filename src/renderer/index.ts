@@ -74,7 +74,7 @@ function showPets(ids: string[]): void {
   engine.setPets(manifests.map((m, i) => buildPet(m, i, manifests.length)));
 }
 
-showPets(ROSTER.map((m) => m.id)); // all pets visible by default
+showPets([ROSTER[0].id]); // one pet at a time; switch via the tray
 engine.start();
 
 // tray <-> renderer wiring
@@ -113,4 +113,4 @@ window.addEventListener('mouseup', () => {
 });
 
 // eslint-disable-next-line no-console
-console.log(`[desktop-pet] renderer: pet engine started (${ROSTER.length} pet)`);
+console.log(`[desktop-pet] renderer: pet engine started (roster ${ROSTER.length}, showing 1)`);

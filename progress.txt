@@ -122,3 +122,10 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
   (Desktop screenshot blocked by macOS Screen Recording permission -> visual look = user QA.)
 - LICENSING: bundled icons are Flaticon free -> attribution required. Documented in CREDITS.md
   + README warning. User must add attribution (or swap CC0) before public release.
+
+## Iteration 8 (UX: one pet at a time)
+- User wanted single-pet selection, not all 5 at once.
+- Reverted tray Pet submenu checkbox(multi) -> radio(single): main tracks currentPetId,
+  click sends SelectPet [id] (one). Renderer default showPets([ROSTER[0].id]) = cat only.
+  (Renderer showPets(ids[]) contract unchanged; main just sends a single-id array.)
+- Verified: build 0 errors, boot RUNTIME=CLEAN "roster 5, showing 1", tray ready.
