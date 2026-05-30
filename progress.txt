@@ -63,3 +63,16 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
 - Verified: tsc 0 errors, 11/11 tests, boot ENGINE_OK/PRELOAD=OK/RENDERER=CLEAN ("1 pet").
 - NOTE: pet self-sleep via idleTimeout won't fire (wander re-triggers first by design) — sleeping is
   driven by the activity detector (US-005). Intentional.
+
+## Iteration 3 (US-005)
+- US-005 done: activity-detector.ts (main).
+  - Pure, tested: isAgentProcess (cmd match, exclude substrings), detectRunning (ignore pids),
+    computeState (running/idle/sleeping by sleepAfterMs). 5 new tests (16 total).
+  - ActivityDetector class: injected lister (ps-list in prod), emits on change + first poll,
+    idle->sleeping after 5min (spec default).
+  - Patterns match claude/codex by cmd incl. `claude-code`; ps-list@7.2.0 is CommonJS (no ESM issue).
+  - Wired in main: psList() lister, excludeSubstrings ['desktop-pet'], ignorePids [self],
+    onChange -> console + webContents.send(ActivityState). did-finish-load re-push for race safety.
+- LIVE VERIFICATION: boot detected the real `claude` session running this build ->
+  emitted "activity: running" (RUNTIME=CLEAN). The whole bot pipeline proven with a real process.
+- Matching is heuristic (cmd-based); precise per-event state is the v0.2 hook connector. Documented.

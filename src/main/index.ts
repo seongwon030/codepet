@@ -1,8 +1,11 @@
 import { app, BrowserWindow, ipcMain, screen, globalShortcut } from 'electron';
+import psList from 'ps-list';
 import { createOverlayWindow } from './overlay-window';
+import { ActivityDetector, DEFAULT_PATTERNS, type ProcLike } from './activity-detector';
 import { IpcChannels, type Rect } from '../shared/types';
 
 let overlay: BrowserWindow | null = null;
+let detector: ActivityDetector | null = null;
 
 /** Interactive rects (pets/box) most recently reported by the renderer. */
 let interactiveRects: Rect[] = [];
@@ -44,6 +47,33 @@ app.whenReady().then(() => {
   overlay = createOverlayWindow();
   startCursorPoller(overlay);
 
+  // "Bot" feature: detect Claude/Codex sessions and drive pet activity.
+  detector = new ActivityDetector(
+    async () => (await psList()) as ProcLike[],
+    (state) => {
+      // eslint-disable-next-line no-console
+      console.log('[desktop-pet] activity:', state);
+      if (overlay && !overlay.isDestroyed()) {
+        overlay.webContents.send(IpcChannels.ActivityState, state);
+      }
+    },
+    {
+      patterns: DEFAULT_PATTERNS,
+      excludeSubstrings: ['desktop-pet'],
+      ignorePids: [process.pid],
+      sleepAfterMs: 5 * 60 * 1000,
+    },
+    Date.now(),
+  );
+  // Re-push the current state once the renderer finishes loading (covers
+  // detector emits that happen before the page is ready).
+  overlay.webContents.on('did-finish-load', () => {
+    if (overlay && detector) {
+      overlay.webContents.send(IpcChannels.ActivityState, detector.state);
+    }
+  });
+  detector.start(2000);
+
   // Spike quit path (no tray yet): Cmd/Ctrl+Shift+P quits.
   globalShortcut.register('CommandOrControl+Shift+P', () => app.quit());
 
@@ -58,5 +88,6 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   if (pollTimer) clearInterval(pollTimer);
+  detector?.stop();
   globalShortcut.unregisterAll();
 });
