@@ -108,3 +108,17 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
 - REMAINING for the user = one manual QA pass on real macOS (only the user can move the mouse):
   hover the pet with no button -> draggable; clicks elsewhere pass through; tray menu items work.
   Everything machine-verifiable (build, 16 tests, boot signals, dmg) is green.
+
+## Iteration 7 (user art: 5 real pets)
+- User provided 5 single 512px PNGs (Format B): cat, dog (paw), duck, seal, whale.
+  Copied to assets/pets/<id>.png.
+- Added StaticSprite (sprite.ts): downscales a single image, animates procedurally
+  (bob/flip while moving, 3 bouncing dots while working, rising "Z" while sleeping).
+- PetManifest.source += 'static'; makeSprite handles 'static' -> StaticSprite('../assets/'+sheet).
+- ROSTER is now the 5 pets; renderer shows ALL of them at once (spread across width).
+- Tray "Pet" submenu changed radio -> CHECKBOX (toggle each pet's visibility; >=1 kept).
+  IPC SelectPet payload changed string -> string[] (visible ids); main tracks visibleIds Set.
+- Verified: build 0 errors, 16/16 tests, boot RUNTIME=CLEAN "5 pet", no image/CSP load errors.
+  (Desktop screenshot blocked by macOS Screen Recording permission -> visual look = user QA.)
+- LICENSING: bundled icons are Flaticon free -> attribution required. Documented in CREDITS.md
+  + README warning. User must add attribution (or swap CC0) before public release.

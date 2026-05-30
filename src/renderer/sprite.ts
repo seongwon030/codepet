@@ -85,6 +85,102 @@ export class SheetSprite implements SpriteSource {
   }
 }
 
+/**
+ * A single static PNG (no grid). The image is downscaled and given code-driven
+ * life: bob/flip while moving, bouncing dots while working, a rising "Z" while
+ * sleeping. Ideal for one-image-per-pet art (ASSETS.md "Format B").
+ */
+export class StaticSprite implements SpriteSource {
+  private img: HTMLImageElement = new Image();
+  private loaded = false;
+
+  constructor(src: string) {
+    this.img.onload = () => {
+      this.loaded = true;
+    };
+    this.img.src = src;
+  }
+
+  ready(): boolean {
+    return this.loaded;
+  }
+
+  draw(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    size: number,
+    state: PetState,
+    clockMs: number,
+    facing: 1 | -1,
+  ): void {
+    const s = size;
+    const t = clockMs / 1000;
+    let bob = Math.sin(t * 2) * s * 0.02;
+    let working = false;
+    let sleeping = false;
+    switch (state) {
+      case 'walking':
+        bob = Math.abs(Math.sin(t * 9)) * s * 0.05;
+        break;
+      case 'working':
+      case 'tool':
+        working = true;
+        bob = Math.sin(t * 5) * s * 0.012;
+        break;
+      case 'sleeping':
+        sleeping = true;
+        bob = Math.sin(t * 1.2) * s * 0.01;
+        break;
+      default:
+        break;
+    }
+
+    // ground shadow
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + s * 0.44, s * 0.3, s * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // the static image, bobbing and facing the travel direction
+    if (this.loaded) {
+      ctx.save();
+      ctx.translate(cx, cy - bob);
+      ctx.scale(facing, 1);
+      ctx.drawImage(this.img, -s / 2, -s / 2, s, s);
+      ctx.restore();
+    }
+
+    // working: three bouncing dots above the head
+    if (working) {
+      ctx.save();
+      ctx.fillStyle = '#3a3f4a';
+      const active = Math.floor(t * 4) % 3;
+      for (let i = 0; i < 3; i++) {
+        const lift = i === active ? s * 0.05 : 0;
+        ctx.beginPath();
+        ctx.arc(cx - s * 0.13 + i * s * 0.13, cy - s * 0.52 - lift, s * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // sleeping: a rising, fading "Z"
+    if (sleeping) {
+      ctx.save();
+      ctx.fillStyle = '#5a6472';
+      ctx.font = `${Math.round(s * 0.18)}px -apple-system, system-ui, sans-serif`;
+      const rise = (t * 22) % (s * 0.4);
+      ctx.globalAlpha = Math.max(0, 1 - rise / (s * 0.4));
+      ctx.fillText('Z', cx + s * 0.18, cy - s * 0.42 - rise);
+      ctx.restore();
+    }
+  }
+}
+
 /** Code-drawn placeholder pet (a small cat) — no assets required. */
 export class ProceduralSprite implements SpriteSource {
   constructor(

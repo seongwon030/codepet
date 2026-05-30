@@ -1,36 +1,38 @@
 import { PetEngine } from './pet-engine';
 import { Pet } from './pet';
-import { ProceduralSprite, SheetSprite, type SpriteSource } from './sprite';
+import { ProceduralSprite, SheetSprite, StaticSprite, type SpriteSource } from './sprite';
 import type { ActivityState, PetManifest, Rect, RosterEntry } from '../shared/types';
 
 interface PetApi {
   reportBounds: (rects: Rect[]) => void;
   reportRoster: (roster: RosterEntry[]) => void;
   onActivity: (cb: (state: ActivityState) => void) => () => void;
-  onSelectPet: (cb: (id: string) => void) => () => void;
+  onSelectPet: (cb: (ids: string[]) => void) => () => void;
   onSetPaused: (cb: (paused: boolean) => void) => () => void;
 }
 const bridge = (window as unknown as { petApi: PetApi }).petApi;
 
 /** Build a drawable sprite from a manifest (sheet if fully specified, else procedural). */
 function makeSprite(m: PetManifest): SpriteSource {
+  // paths are relative to the app assets dir, resolved from the renderer html
+  if (m.source === 'static' && m.sheet) {
+    return new StaticSprite(`../assets/${m.sheet}`);
+  }
   if (m.source === 'sheet' && m.sheet && m.frameWidth && m.frameHeight && m.animations) {
-    // sheet path is relative to the app assets dir, resolved from the renderer html
     return new SheetSprite(`../assets/${m.sheet}`, m.frameWidth, m.frameHeight, m.animations);
   }
   const c = m.colors ?? { body: '#6ca8ff', accent: '#ff8aa0' };
   return new ProceduralSprite(c.body, c.accent);
 }
 
-// Built-in placeholder roster (US-004). User PNGs replace/extend this via manifests later.
+// 5 pets from user-provided static PNGs (assets/pets/*.png). Single-image art,
+// animated procedurally (bob/flip + working dots + sleeping Z) by StaticSprite.
 const ROSTER: PetManifest[] = [
-  {
-    id: 'cat',
-    name: 'Cat',
-    source: 'procedural',
-    displaySize: 112,
-    colors: { body: '#6ca8ff', accent: '#ff8aa0' },
-  },
+  { id: 'cat', name: 'Cat', source: 'static', sheet: 'pets/cat.png', displaySize: 110 },
+  { id: 'dog', name: 'Dog', source: 'static', sheet: 'pets/dog.png', displaySize: 104 },
+  { id: 'duck', name: 'Duck', source: 'static', sheet: 'pets/duck.png', displaySize: 104 },
+  { id: 'seal', name: 'Seal', source: 'static', sheet: 'pets/seal.png', displaySize: 112 },
+  { id: 'whale', name: 'Whale', source: 'static', sheet: 'pets/whale.png', displaySize: 120 },
 ];
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -57,27 +59,28 @@ const engine = new PetEngine(
   (rects) => bridge.reportBounds(rects),
 );
 
-function buildPet(m: PetManifest): Pet {
+function buildPet(m: PetManifest, index: number, total: number): Pet {
   const size = { width: m.displaySize, height: m.displaySize };
-  const start = {
-    x: Math.max(0, window.innerWidth / 2 - size.width / 2),
-    y: Math.max(0, window.innerHeight / 2 - size.height / 2),
-  };
-  return new Pet(m.id, makeSprite(m), size, start);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  // spread pets across the width, alternating a little vertically
+  const x = Math.max(0, ((index + 1) / (total + 1)) * w - size.width / 2);
+  const y = Math.max(0, h * 0.5 + (index % 2 === 0 ? -1 : 1) * h * 0.12 - size.height / 2);
+  return new Pet(m.id, makeSprite(m), size, { x, y });
 }
 
-function showPet(id: string): void {
-  const m = ROSTER.find((p) => p.id === id) ?? ROSTER[0];
-  engine.setPets([buildPet(m)]);
+function showPets(ids: string[]): void {
+  const manifests = ids.length ? ROSTER.filter((m) => ids.includes(m.id)) : ROSTER;
+  engine.setPets(manifests.map((m, i) => buildPet(m, i, manifests.length)));
 }
 
-showPet(ROSTER[0].id);
+showPets(ROSTER.map((m) => m.id)); // all pets visible by default
 engine.start();
 
 // tray <-> renderer wiring
 bridge.reportRoster(ROSTER.map((m) => ({ id: m.id, name: m.name })));
 bridge.onActivity((state) => engine.setActivity(state));
-bridge.onSelectPet((id) => showPet(id));
+bridge.onSelectPet((ids) => showPets(ids));
 bridge.onSetPaused((paused) => engine.setPaused(paused));
 
 // Drag: pointer-down on a pet (only delivered when main toggled the overlay

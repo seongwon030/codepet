@@ -4,9 +4,9 @@ A macOS desktop pet that roams your wallpaper and **reacts to your Claude Code /
 sessions** — when an agent is running, the pet gets to work; when things go quiet, it
 naps. Built with Electron + TypeScript.
 
-> Status: **v0.1 (MVP)** — single procedural placeholder pet, primary display, process-based
-> session detection. Roadmap (5 pets, precise hook integration, multi-monitor, code signing)
-> in `docs/superpowers/specs/2026-05-30-desktop-pet-design.md`.
+> Status: **v0.1 (MVP)** — **5 pets** (cat, dog, duck, seal, whale) roaming together,
+> primary display, process-based session detection. Roadmap (precise hook integration,
+> multi-monitor, code signing) in `docs/superpowers/specs/2026-05-30-desktop-pet-design.md`.
 
 ## Features (v0.1)
 
@@ -58,10 +58,17 @@ Because v0.1 is unsigned, macOS Gatekeeper warns on first launch. Open it once v
 After the first open, it launches normally. (A signed + notarized build — which removes
 this prompt — is on the v0.3 roadmap and requires a $99/yr Apple Developer account.)
 
-## Add your own pets
+## Pets & art
 
-You provide the art; the app loads it via a manifest. See **[ASSETS.md](ASSETS.md)** —
-512px PNG works great (a 4×4 sprite sheet, or a single static image).
+The 5 bundled pets are single 512px PNGs (in `assets/pets/`), animated by code
+(`StaticSprite`: bob/flip while moving, dots while working, a "Z" while sleeping).
+Toggle which pets are visible from the tray → Pet submenu.
+
+To add or replace art, see **[ASSETS.md](ASSETS.md)** — a 512px PNG works great
+(single static image, or a 4×4 sprite sheet for frame animation).
+
+> ⚠️ **Attribution:** the bundled icons are Flaticon "free" icons, which **require
+> attribution** before public distribution. See **[CREDITS.md](CREDITS.md)**.
 
 ## How session detection works
 

@@ -51,8 +51,8 @@ export interface AnimDef {
 export interface PetManifest {
   id: string;
   name: string;
-  source: 'procedural' | 'sheet';
-  /** on-screen size in CSS px (sheet art is downscaled to this). */
+  source: 'procedural' | 'sheet' | 'static';
+  /** on-screen size in CSS px (sheet/static art is downscaled to this). */
   displaySize: number;
   /** procedural-only: body/accent colors. */
   colors?: { body: string; accent: string };

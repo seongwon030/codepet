@@ -25,9 +25,9 @@ contextBridge.exposeInMainWorld('petApi', {
     ipcRenderer.on(IpcChannels.ActivityState, listener);
     return () => ipcRenderer.removeListener(IpcChannels.ActivityState, listener);
   },
-  /** Subscribe to pet-selection changes from the tray. */
-  onSelectPet: (cb: (id: string) => void): (() => void) => {
-    const listener = (_e: unknown, id: string) => cb(id);
+  /** Subscribe to the set of visible pet ids chosen in the tray. */
+  onSelectPet: (cb: (ids: string[]) => void): (() => void) => {
+    const listener = (_e: unknown, ids: string[]) => cb(ids);
     ipcRenderer.on(IpcChannels.SelectPet, listener);
     return () => ipcRenderer.removeListener(IpcChannels.SelectPet, listener);
   },
