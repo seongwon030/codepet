@@ -15,6 +15,13 @@ import { createOverlayWindow } from './overlay-window';
 import { ActivityDetector, DEFAULT_PATTERNS, type ProcLike } from './activity-detector';
 import { HookServer } from './hook-server';
 import { connectClaude, disconnectClaude, isClaudeConnected, ClaudeSettingsPath } from './connector';
+import {
+  connectCodex,
+  disconnectCodex,
+  isCodexConnected,
+  codexNotifyState,
+  CodexConfigPath,
+} from './codex-connector';
 import { IpcChannels, type Rect, type RosterEntry } from '../shared/types';
 
 /** Fixed localhost port for the hook server (embedded in installed hook commands). */
@@ -137,6 +144,15 @@ function buildTrayMenu(): Menu {
           },
         }
       : { label: 'Connect Claude Code…', click: onConnectClaude },
+    isCodexConnected()
+      ? {
+          label: 'Disconnect Codex',
+          click: () => {
+            disconnectCodex();
+            tray?.setContextMenu(buildTrayMenu());
+          },
+        }
+      : { label: 'Connect Codex…', click: onConnectCodex },
     {
       label: 'Launch at Login',
       type: 'checkbox',
@@ -183,6 +199,38 @@ function onConnectClaude(): void {
   if (choice !== 0) return;
   const res = connectClaude(HOOK_PORT);
   if (!res.ok) dialog.showErrorBox('Connect failed', res.error ?? 'Unknown error');
+  tray?.setContextMenu(buildTrayMenu());
+}
+
+/** Tray action: install a Codex notify, but never overwrite an existing one. */
+function onConnectCodex(): void {
+  if (codexNotifyState() === 'foreign') {
+    dialog.showMessageBoxSync({
+      type: 'info',
+      buttons: ['OK'],
+      message: 'Codex already has a notify program',
+      detail:
+        `Desktop Pet won't modify it (it may be oh-my-codex / Computer Use). Codex is still ` +
+        `detected via process polling, so the pet reacts while Codex is running.`,
+    });
+    return;
+  }
+  const choice = dialog.showMessageBoxSync({
+    type: 'question',
+    buttons: ['Connect', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+    message: 'Connect Desktop Pet to Codex?',
+    detail:
+      `This adds a notify entry to ${CodexConfigPath} (backed up) so the pet idles when a Codex ` +
+      `turn finishes. Restart Codex to apply. You can disconnect anytime.`,
+  });
+  if (choice !== 0) return;
+  const scriptPath = path.join(app.getPath('userData'), 'codex-notify.sh');
+  const res = connectCodex(HOOK_PORT, scriptPath);
+  if (!res.ok && res.reason === 'error') {
+    dialog.showErrorBox('Connect Codex failed', res.error ?? 'Unknown error');
+  }
   tray?.setContextMenu(buildTrayMenu());
 }
 

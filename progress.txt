@@ -154,5 +154,22 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
   Total tests 20/20.
 - NOTE: connect edits the user's real ~/.claude/settings.json only on explicit tray click +
   dialog confirm (backup + reversible). Not auto-run anywhere.
-- TODO (follow-up): Codex notify connector; menu-bar dark-mode contrast for black pets;
-  rebuild .dmg for the new feature set.
+- TODO (follow-up): menu-bar dark-mode contrast for black pets.
+
+## Iteration 11 (deploy + Codex connector)
+- DEPLOY: built release/Desktop Pet-0.1.0-arm64.dmg (96M, unsigned) with the
+  5-pet / single-select / multi-monitor / Claude-hook / drag-fix build.
+- CLAUDE verification: read the user's real ~/.claude/settings.json — its live PreToolUse hook
+  (rtk-rewrite.sh, matcher+hooks[].{type,command}) matches our connector's output schema exactly,
+  confirming installed hooks will fire. Fixed our tool matcher '*' -> '.*' (valid regex, all tools).
+  (Claude reads settings.json at session start -> connect then start a NEW claude session.)
+- CODEX connector (codex-connector.ts): SAFE design. Codex `notify` is a single key, so we never
+  overwrite an existing one. codexNotifyState: ours|foreign|none.
+  - none -> install notify (turn-complete -> idle) inserted ABOVE the first [table] (TOML rule),
+    with a generated script (app userData/codex-notify.sh) + config.toml backup.
+  - foreign -> refuse + inform (Codex stays on process polling, which already works).
+  - User's real ~/.codex/config.toml HAS a foreign notify (oh-my-codex Computer Use chaining) ->
+    we correctly refuse; Codex works via polling.
+  - 3 temp-file unit tests (install-above-table, refuse-foreign, idempotent+disconnect). 23/23 total.
+- tray: "Connect Codex…"/"Disconnect Codex" added. Boot clean.
+- NOTE: the deployed .dmg predates the Codex commit; rebuild with `npm run dist` to include it.

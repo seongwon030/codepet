@@ -82,8 +82,13 @@ To add or replace art, see **[ASSETS.md](ASSETS.md)** — a 512px PNG works grea
    server on `127.0.0.1:38917`. Fresh hook events take precedence over polling.
 
 Connecting only edits your settings after you confirm a dialog, merges non-destructively
-(your existing hooks are preserved), and is fully removable. Codex precise integration (its
-`notify` only signals turn-complete) is a follow-up.
+(your existing hooks are preserved), and is fully removable.
+
+**Codex** is detected by process polling out of the box. Tray → **Connect Codex** adds a
+`notify` to `~/.codex/config.toml` (turn-complete → *idle*) **only if you don't already have
+one** — it never overwrites an existing notify (e.g. oh-my-codex / Computer Use); in that case
+it tells you so and leaves Codex on polling. Because Codex `notify` only signals turn
+completion, Codex "working" comes from polling.
 
 ## Privacy
 

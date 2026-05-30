@@ -71,7 +71,7 @@ export function connectClaude(
       const existing = Array.isArray(hooks[event]) ? hooks[event] : [];
       const withoutOurs = existing.filter((e) => !isOurs(e)); // idempotent re-install
       const entry: HookEntry = TOOL_EVENTS.has(event)
-        ? { matcher: '*', hooks: [{ type: 'command', command: curlCommand(port, kind) }] }
+        ? { matcher: '.*', hooks: [{ type: 'command', command: curlCommand(port, kind) }] } // regex: all tools
         : { hooks: [{ type: 'command', command: curlCommand(port, kind) }] };
       hooks[event] = [...withoutOurs, entry];
     }
