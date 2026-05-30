@@ -1,18 +1,22 @@
 import { PetEngine } from './pet-engine';
 import { Pet } from './pet';
 import { ProceduralSprite, SheetSprite, type SpriteSource } from './sprite';
-import type { ActivityState, PetManifest, Rect } from '../shared/types';
+import type { ActivityState, PetManifest, Rect, RosterEntry } from '../shared/types';
 
 interface PetApi {
   reportBounds: (rects: Rect[]) => void;
+  reportRoster: (roster: RosterEntry[]) => void;
   onActivity: (cb: (state: ActivityState) => void) => () => void;
+  onSelectPet: (cb: (id: string) => void) => () => void;
+  onSetPaused: (cb: (paused: boolean) => void) => () => void;
 }
 const bridge = (window as unknown as { petApi: PetApi }).petApi;
 
 /** Build a drawable sprite from a manifest (sheet if fully specified, else procedural). */
 function makeSprite(m: PetManifest): SpriteSource {
   if (m.source === 'sheet' && m.sheet && m.frameWidth && m.frameHeight && m.animations) {
-    return new SheetSprite(m.sheet, m.frameWidth, m.frameHeight, m.animations);
+    // sheet path is relative to the app assets dir, resolved from the renderer html
+    return new SheetSprite(`../assets/${m.sheet}`, m.frameWidth, m.frameHeight, m.animations);
   }
   const c = m.colors ?? { body: '#6ca8ff', accent: '#ff8aa0' };
   return new ProceduralSprite(c.body, c.accent);
@@ -53,17 +57,28 @@ const engine = new PetEngine(
   (rects) => bridge.reportBounds(rects),
 );
 
-for (const m of ROSTER) {
+function buildPet(m: PetManifest): Pet {
   const size = { width: m.displaySize, height: m.displaySize };
   const start = {
     x: Math.max(0, window.innerWidth / 2 - size.width / 2),
     y: Math.max(0, window.innerHeight / 2 - size.height / 2),
   };
-  engine.add(new Pet(m.id, makeSprite(m), size, start));
+  return new Pet(m.id, makeSprite(m), size, start);
 }
 
+function showPet(id: string): void {
+  const m = ROSTER.find((p) => p.id === id) ?? ROSTER[0];
+  engine.setPets([buildPet(m)]);
+}
+
+showPet(ROSTER[0].id);
 engine.start();
+
+// tray <-> renderer wiring
+bridge.reportRoster(ROSTER.map((m) => ({ id: m.id, name: m.name })));
 bridge.onActivity((state) => engine.setActivity(state));
+bridge.onSelectPet((id) => showPet(id));
+bridge.onSetPaused((paused) => engine.setPaused(paused));
 
 // Drag: pointer-down on a pet (only delivered when main toggled the overlay
 // interactive because the cursor is over a pet) picks it up; it follows the

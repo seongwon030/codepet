@@ -8,9 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && npm run bundle:renderer && npm run copy:assets",
+    "build": "rm -rf dist && tsc -p tsconfig.json && npm run bundle:renderer && npm run copy:assets",
     "bundle:renderer": "esbuild src/renderer/index.ts --bundle --format=iife --outfile=dist/renderer/bundle.js --platform=browser --target=es2022",
-    "copy:assets": "mkdir -p dist/renderer && cp src/renderer/index.html dist/renderer/index.html && (cp -R assets dist/assets 2>/dev/null || true)",
+    "copy:assets": "mkdir -p dist/renderer dist/assets && cp src/renderer/index.html dist/renderer/index.html && cp -R assets/. dist/assets/",
     "start": "npm run build && electron .",
     "test": "npm run build && node --test dist/test/*.test.js",
     "dist": "npm run build && electron-builder --mac dmg"

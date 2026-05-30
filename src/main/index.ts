@@ -1,11 +1,25 @@
-import { app, BrowserWindow, ipcMain, screen, globalShortcut } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  globalShortcut,
+  Tray,
+  Menu,
+  nativeImage,
+} from 'electron';
+import * as path from 'path';
 import psList from 'ps-list';
 import { createOverlayWindow } from './overlay-window';
 import { ActivityDetector, DEFAULT_PATTERNS, type ProcLike } from './activity-detector';
-import { IpcChannels, type Rect } from '../shared/types';
+import { IpcChannels, type Rect, type RosterEntry } from '../shared/types';
 
 let overlay: BrowserWindow | null = null;
 let detector: ActivityDetector | null = null;
+let tray: Tray | null = null;
+let paused = false;
+let roster: RosterEntry[] = [];
+let currentPetId = '';
 
 /** Interactive rects (pets/box) most recently reported by the renderer. */
 let interactiveRects: Rect[] = [];
@@ -34,6 +48,59 @@ function startCursorPoller(win: BrowserWindow): void {
   }, 40);
 }
 
+function sendToOverlay(channel: string, payload: unknown): void {
+  if (overlay && !overlay.isDestroyed()) overlay.webContents.send(channel, payload);
+}
+
+function buildTrayMenu(): Menu {
+  const petSubmenu: Electron.MenuItemConstructorOptions[] = roster.map((p) => ({
+    label: p.name,
+    type: 'radio',
+    checked: p.id === currentPetId,
+    click: () => {
+      currentPetId = p.id;
+      sendToOverlay(IpcChannels.SelectPet, p.id);
+    },
+  }));
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    { label: 'Desktop Pet', enabled: false },
+    { type: 'separator' },
+    roster.length
+      ? { label: 'Pet', submenu: petSubmenu }
+      : { label: 'Pet (loading…)', enabled: false },
+    {
+      label: paused ? 'Resume' : 'Pause',
+      click: () => {
+        paused = !paused;
+        sendToOverlay(IpcChannels.SetPaused, paused);
+        tray?.setContextMenu(buildTrayMenu());
+      },
+    },
+    {
+      label: 'Launch at Login',
+      type: 'checkbox',
+      checked: app.getLoginItemSettings().openAtLogin,
+      click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }),
+    },
+    { type: 'separator' },
+    { label: 'Quit Desktop Pet', click: () => app.quit() },
+  ];
+  return Menu.buildFromTemplate(template);
+}
+
+function createTray(): void {
+  const iconPath = path.join(__dirname, '../assets/trayTemplate.png');
+  let icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) icon = nativeImage.createEmpty();
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
+  tray.setToolTip('Desktop Pet');
+  tray.setContextMenu(buildTrayMenu());
+  // eslint-disable-next-line no-console
+  console.log('[desktop-pet] tray ready, iconEmpty=', icon.isEmpty());
+}
+
 app.whenReady().then(() => {
   // Menu-bar agent: no Dock icon. (Packaged build also sets LSUIElement=1.)
   if (process.platform === 'darwin' && app.dock) {
@@ -44,8 +111,15 @@ app.whenReady().then(() => {
     interactiveRects = Array.isArray(rects) ? rects : [];
   });
 
+  ipcMain.on(IpcChannels.Roster, (_e, list: RosterEntry[]) => {
+    roster = Array.isArray(list) ? list : [];
+    if (roster.length && !currentPetId) currentPetId = roster[0].id;
+    tray?.setContextMenu(buildTrayMenu());
+  });
+
   overlay = createOverlayWindow();
   startCursorPoller(overlay);
+  createTray();
 
   // "Bot" feature: detect Claude/Codex sessions and drive pet activity.
   detector = new ActivityDetector(

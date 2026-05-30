@@ -84,3 +84,15 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
   mouseup -> endDrag. Works because main toggles overlay interactive when cursor is over a pet.
 - Verified: build 0 errors, boot RESULT=OK/RUNTIME=CLEAN.
 - Interactive drag confirmation folds into the same manual-QA pass as US-002 (hover+drag the pet).
+
+## Iteration 5 (US-007)
+- US-007 done: menu-bar Tray.
+  - Tray icon generated programmatically (scripts/make-tray-icon.mjs -> assets/trayTemplate.png +@2x,
+    a black template PNG via a tiny zlib PNG encoder; no external asset). setTemplateImage(true).
+  - Menu: Pet submenu (radio, from renderer-reported roster), Pause/Resume, Launch at Login
+    (app.setLoginItemSettings), Quit.
+  - IPC added: Roster (renderer->main), SelectPet + SetPaused (main->renderer). preload exposes
+    reportRoster/onSelectPet/onSetPaused. engine.setPets() swaps the active pet; setPaused() halts loop.
+  - build now `rm -rf dist` first (avoids stale dist/assets nesting); copy:assets uses `cp -R assets/. dist/assets/`.
+- Verified: build 0 errors, 16/16 tests, boot OK/RUNTIME=CLEAN, "tray ready, iconEmpty=false".
+- Interactive menu-click confirmation folds into the manual-QA pass.

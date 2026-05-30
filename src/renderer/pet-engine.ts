@@ -36,6 +36,13 @@ export class PetEngine {
     this.pets.push(pet);
   }
 
+  /** Replace the current pets, re-applying the live activity (tray pet picker). */
+  setPets(pets: Pet[]): void {
+    this.pets = pets;
+    for (const pet of pets) pet.dispatch({ type: 'activity', state: this.lastActivity });
+    this.ensureRunning();
+  }
+
   setActivity(state: ActivityState): void {
     this.lastActivity = state;
     for (const pet of this.pets) pet.dispatch({ type: 'activity', state });

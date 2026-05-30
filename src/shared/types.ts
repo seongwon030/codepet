@@ -19,7 +19,19 @@ export const IpcChannels = {
   ReportBounds: 'pet:bounds',
   /** main -> renderer: current activity state */
   ActivityState: 'pet:activity',
+  /** renderer -> main: available pets (for the tray picker) */
+  Roster: 'pet:roster',
+  /** main -> renderer: select which pet to show */
+  SelectPet: 'pet:select',
+  /** main -> renderer: pause/resume the animation loop */
+  SetPaused: 'pet:paused',
 } as const;
+
+/** A pet entry for the tray picker. */
+export interface RosterEntry {
+  id: string;
+  name: string;
+}
 
 /** Animation names a pet sprite must provide. */
 export type AnimName = 'idle' | 'walk' | 'working' | 'sleeping';
