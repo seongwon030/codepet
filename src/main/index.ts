@@ -14,52 +14,84 @@ import { createOverlayWindow } from './overlay-window';
 import { ActivityDetector, DEFAULT_PATTERNS, type ProcLike } from './activity-detector';
 import { IpcChannels, type Rect, type RosterEntry } from '../shared/types';
 
-let overlay: BrowserWindow | null = null;
+/** Per-display overlay with its own click-through / drag state. */
+interface OverlayCtx {
+  win: BrowserWindow;
+  rects: Rect[];
+  clickThrough: boolean;
+  dragLocked: boolean;
+}
+
+let overlays: OverlayCtx[] = [];
 let detector: ActivityDetector | null = null;
 let tray: Tray | null = null;
 let paused = false;
 let roster: RosterEntry[] = [];
 let currentPetId = '';
-
-/** Interactive rects (pets/box) most recently reported by the renderer. */
-let interactiveRects: Rect[] = [];
-/** Whether the overlay currently ignores mouse events (click-through). */
-let clickThrough = true;
-/** While true (a drag is in progress), the poller keeps the overlay interactive. */
-let dragLocked = false;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-/** Spike core: toggle click-through based on whether the cursor is over a pet. */
-function startCursorPoller(win: BrowserWindow): void {
+/** Send a message to every live overlay window. */
+function broadcast(channel: string, payload: unknown): void {
+  for (const o of overlays) {
+    if (!o.win.isDestroyed()) o.win.webContents.send(channel, payload);
+  }
+}
+
+function overlayForSender(senderId: number): OverlayCtx | undefined {
+  return overlays.find((o) => !o.win.isDestroyed() && o.win.webContents.id === senderId);
+}
+
+/** Toggle each overlay's click-through based on whether the cursor is over a pet. */
+function startCursorPoller(): void {
   pollTimer = setInterval(() => {
-    if (win.isDestroyed()) return;
-    if (dragLocked) {
-      // Don't flip click-through mid-drag — it would interrupt mousemove (stutter).
-      if (clickThrough) {
-        win.setIgnoreMouseEvents(false);
-        clickThrough = false;
-      }
-      return;
-    }
     const cursor = screen.getCursorScreenPoint();
-    const b = win.getBounds();
-    const lx = cursor.x - b.x;
-    const ly = cursor.y - b.y;
-    const over = interactiveRects.some(
-      (r) => lx >= r.x && lx <= r.x + r.width && ly >= r.y && ly <= r.y + r.height,
-    );
-    if (over && clickThrough) {
-      win.setIgnoreMouseEvents(false);
-      clickThrough = false;
-    } else if (!over && !clickThrough) {
-      win.setIgnoreMouseEvents(true, { forward: true });
-      clickThrough = true;
+    for (const o of overlays) {
+      if (o.win.isDestroyed()) continue;
+      if (o.dragLocked) {
+        // Don't flip click-through mid-drag — it would interrupt mousemove (stutter).
+        if (o.clickThrough) {
+          o.win.setIgnoreMouseEvents(false);
+          o.clickThrough = false;
+        }
+        continue;
+      }
+      const b = o.win.getBounds();
+      const lx = cursor.x - b.x;
+      const ly = cursor.y - b.y;
+      const inside = lx >= 0 && ly >= 0 && lx <= b.width && ly <= b.height;
+      const over =
+        inside &&
+        o.rects.some((r) => lx >= r.x && lx <= r.x + r.width && ly >= r.y && ly <= r.y + r.height);
+      if (over && o.clickThrough) {
+        o.win.setIgnoreMouseEvents(false);
+        o.clickThrough = false;
+      } else if (!over && !o.clickThrough) {
+        o.win.setIgnoreMouseEvents(true, { forward: true });
+        o.clickThrough = true;
+      }
     }
   }, 40);
 }
 
-function sendToOverlay(channel: string, payload: unknown): void {
-  if (overlay && !overlay.isDestroyed()) overlay.webContents.send(channel, payload);
+/** (Re)create one overlay window per display. */
+function createOverlays(): void {
+  for (const o of overlays) {
+    if (!o.win.isDestroyed()) o.win.destroy();
+  }
+  overlays = [];
+  for (const display of screen.getAllDisplays()) {
+    const win = createOverlayWindow(display);
+    overlays.push({ win, rects: [], clickThrough: true, dragLocked: false });
+    win.webContents.on('did-finish-load', () => {
+      if (win.isDestroyed()) return;
+      // sync a freshly-loaded window to the current state
+      if (detector) win.webContents.send(IpcChannels.ActivityState, detector.state);
+      if (currentPetId) win.webContents.send(IpcChannels.SelectPet, [currentPetId]);
+      if (paused) win.webContents.send(IpcChannels.SetPaused, true);
+    });
+  }
+  // eslint-disable-next-line no-console
+  console.log(`[desktop-pet] overlays ready: ${overlays.length} display(s).`);
 }
 
 function buildTrayMenu(): Menu {
@@ -70,7 +102,7 @@ function buildTrayMenu(): Menu {
     click: () => {
       currentPetId = p.id;
       updateTrayIcon(p.id);
-      sendToOverlay(IpcChannels.SelectPet, [p.id]); // show exactly one pet
+      broadcast(IpcChannels.SelectPet, [p.id]); // show exactly one pet, on every display
     },
   }));
 
@@ -84,7 +116,7 @@ function buildTrayMenu(): Menu {
       label: paused ? 'Resume' : 'Pause',
       click: () => {
         paused = !paused;
-        sendToOverlay(IpcChannels.SetPaused, paused);
+        broadcast(IpcChannels.SetPaused, paused);
         tray?.setContextMenu(buildTrayMenu());
       },
     },
@@ -125,8 +157,9 @@ app.whenReady().then(() => {
     app.dock.hide();
   }
 
-  ipcMain.on(IpcChannels.ReportBounds, (_e, rects: Rect[]) => {
-    interactiveRects = Array.isArray(rects) ? rects : [];
+  ipcMain.on(IpcChannels.ReportBounds, (e, rects: Rect[]) => {
+    const o = overlayForSender(e.sender.id);
+    if (o) o.rects = Array.isArray(rects) ? rects : [];
   });
 
   ipcMain.on(IpcChannels.Roster, (_e, list: RosterEntry[]) => {
@@ -136,17 +169,25 @@ app.whenReady().then(() => {
     tray?.setContextMenu(buildTrayMenu());
   });
 
-  ipcMain.on(IpcChannels.DragLock, (_e, locked: boolean) => {
-    dragLocked = Boolean(locked);
-    if (dragLocked && overlay && !overlay.isDestroyed()) {
-      overlay.setIgnoreMouseEvents(false);
-      clickThrough = false;
+  ipcMain.on(IpcChannels.DragLock, (e, locked: boolean) => {
+    const o = overlayForSender(e.sender.id);
+    if (!o) return;
+    o.dragLocked = Boolean(locked);
+    if (o.dragLocked && !o.win.isDestroyed()) {
+      o.win.setIgnoreMouseEvents(false);
+      o.clickThrough = false;
     }
   });
 
-  overlay = createOverlayWindow();
-  startCursorPoller(overlay);
+  createOverlays();
+  startCursorPoller();
   createTray();
+
+  // Rebuild overlays when the display layout changes (monitor plugged/unplugged).
+  const onDisplayChange = (): void => createOverlays();
+  screen.on('display-added', onDisplayChange);
+  screen.on('display-removed', onDisplayChange);
+  screen.on('display-metrics-changed', onDisplayChange);
 
   // "Bot" feature: detect Claude/Codex sessions and drive pet activity.
   detector = new ActivityDetector(
@@ -154,9 +195,7 @@ app.whenReady().then(() => {
     (state) => {
       // eslint-disable-next-line no-console
       console.log('[desktop-pet] activity:', state);
-      if (overlay && !overlay.isDestroyed()) {
-        overlay.webContents.send(IpcChannels.ActivityState, state);
-      }
+      broadcast(IpcChannels.ActivityState, state);
     },
     {
       patterns: DEFAULT_PATTERNS,
@@ -166,23 +205,16 @@ app.whenReady().then(() => {
     },
     Date.now(),
   );
-  // Re-push the current state once the renderer finishes loading (covers
-  // detector emits that happen before the page is ready).
-  overlay.webContents.on('did-finish-load', () => {
-    if (overlay && detector) {
-      overlay.webContents.send(IpcChannels.ActivityState, detector.state);
-    }
-  });
   detector.start(2000);
 
   // Global quit hotkey (also available via the tray): Cmd/Ctrl+Shift+P.
   globalShortcut.register('CommandOrControl+Shift+P', () => app.quit());
 
   // eslint-disable-next-line no-console
-  console.log('[desktop-pet] overlay ready; cursor poller running.');
+  console.log('[desktop-pet] cursor poller running.');
 });
 
-// Menu-bar app: keep running when the overlay is hidden/closed.
+// Menu-bar app: keep running when overlays are hidden/closed.
 app.on('window-all-closed', () => {
   // Intentionally do not quit on macOS.
 });

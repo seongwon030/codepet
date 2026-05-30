@@ -1,13 +1,14 @@
-import { BrowserWindow, screen } from 'electron';
+import { BrowserWindow, type Display } from 'electron';
 import * as path from 'path';
 
 /**
- * Creates the transparent, always-on-top, click-through overlay window that
- * covers the primary display. Per spec: never fullscreen:true; apply
- * visibleOnFullScreen AFTER ready-to-show; start click-through.
+ * Creates a transparent, always-on-top, click-through overlay window covering
+ * one display. Per spec: never fullscreen:true; apply visibleOnFullScreen AFTER
+ * ready-to-show; start click-through. One window is created per display so the
+ * overlay works on every monitor (macOS confines a window to a single display
+ * when "Displays have separate Spaces" is on).
  */
-export function createOverlayWindow(): BrowserWindow {
-  const display = screen.getPrimaryDisplay();
+export function createOverlayWindow(display: Display): BrowserWindow {
   const { x, y, width, height } = display.bounds;
 
   const win = new BrowserWindow({
@@ -31,8 +32,7 @@ export function createOverlayWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       // sandbox:false lets the preload require app modules (shared/types).
-      // Safe here: the overlay only ever loads local, trusted files — no
-      // remote content — and the renderer still has no direct node access.
+      // Safe here: the overlay only ever loads local, trusted files.
       sandbox: false,
     },
   });
