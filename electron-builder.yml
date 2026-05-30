@@ -9,6 +9,8 @@ mac:
   target:
     - dmg
   category: public.app-category.entertainment
+  # v0.1 ships unsigned (no Apple Developer account). identity:null skips signing.
+  identity: null
   # LSUIElement=1 -> menu-bar agent app, no Dock icon
   extendInfo:
     LSUIElement: 1

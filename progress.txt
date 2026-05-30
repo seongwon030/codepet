@@ -96,3 +96,15 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
   - build now `rm -rf dist` first (avoids stale dist/assets nesting); copy:assets uses `cp -R assets/. dist/assets/`.
 - Verified: build 0 errors, 16/16 tests, boot OK/RUNTIME=CLEAN, "tray ready, iconEmpty=false".
 - Interactive menu-click confirmation folds into the manual-QA pass.
+
+## Iteration 6 (US-008) — v0.1 COMPLETE
+- US-008 done: electron-builder packaging.
+  - electron-builder.yml: mac dmg target, identity:null (unsigned), LSUIElement via extendInfo.
+  - package.json: author added; `npm run dist` -> release/Desktop Pet-0.1.0-arm64.dmg (96M, unsigned).
+  - README.md documents dev/build + first-run Gatekeeper flow (right-click Open / xattr quarantine).
+- Verified: dmg built (exit 0), "skipped macOS code signing reason=identity null", valid APFS dmg.
+
+## v0.1 STATUS: all 8 PRD stories pass (automated criteria).
+- REMAINING for the user = one manual QA pass on real macOS (only the user can move the mouse):
+  hover the pet with no button -> draggable; clicks elsewhere pass through; tray menu items work.
+  Everything machine-verifiable (build, 16 tests, boot signals, dmg) is green.
