@@ -76,3 +76,11 @@ Goal: build v0.1 MVP per RALPH_GOAL.md (spec: docs/superpowers/specs/2026-05-30-
 - LIVE VERIFICATION: boot detected the real `claude` session running this build ->
   emitted "activity: running" (RUNTIME=CLEAN). The whole bot pipeline proven with a real process.
 - Matching is heuristic (cmd-based); precise per-event state is the v0.2 hook connector. Documented.
+
+## Iteration 4 (US-006)
+- US-006 done: drag the pet. Pet.moveTo(pos,bounds) clamps; engine.startDrag/endDrag;
+  endDrag re-applies lastActivity so a dropped pet keeps working if a session is live.
+- index.ts: canvas mousedown -> engine.petAt -> startDrag + offset; window mousemove -> moveTo;
+  mouseup -> endDrag. Works because main toggles overlay interactive when cursor is over a pet.
+- Verified: build 0 errors, boot RESULT=OK/RUNTIME=CLEAN.
+- Interactive drag confirmation folds into the same manual-QA pass as US-002 (hover+drag the pet).

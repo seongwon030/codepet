@@ -65,5 +65,34 @@ for (const m of ROSTER) {
 engine.start();
 bridge.onActivity((state) => engine.setActivity(state));
 
+// Drag: pointer-down on a pet (only delivered when main toggled the overlay
+// interactive because the cursor is over a pet) picks it up; it follows the
+// cursor and is dropped on pointer-up, then resumes the current activity.
+let dragPet: Pet | null = null;
+let dragOffset = { x: 0, y: 0 };
+
+canvas.addEventListener('mousedown', (e) => {
+  const pet = engine.petAt(e.clientX, e.clientY);
+  if (!pet) return;
+  dragPet = pet;
+  dragOffset = { x: e.clientX - pet.pos.x, y: e.clientY - pet.pos.y };
+  engine.startDrag(pet);
+  e.preventDefault();
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!dragPet) return;
+  dragPet.moveTo(
+    { x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y },
+    { width: window.innerWidth, height: window.innerHeight },
+  );
+});
+
+window.addEventListener('mouseup', () => {
+  if (!dragPet) return;
+  engine.endDrag(dragPet);
+  dragPet = null;
+});
+
 // eslint-disable-next-line no-console
 console.log(`[desktop-pet] renderer: pet engine started (${ROSTER.length} pet)`);

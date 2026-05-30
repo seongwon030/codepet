@@ -69,4 +69,9 @@ export class Pet {
   center(): Vec {
     return { x: this.pos.x + this.size.width / 2, y: this.pos.y + this.size.height / 2 };
   }
+
+  /** Directly place the pet (used while dragging), clamped to bounds. */
+  moveTo(pos: Vec, bounds: Size): void {
+    this.pos = clamp(pos, bounds, this.size);
+  }
 }

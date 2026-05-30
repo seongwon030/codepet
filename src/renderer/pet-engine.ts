@@ -24,6 +24,7 @@ export class PetEngine {
   private raf = 0;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private lastBoundsReport = 0;
+  private lastActivity: ActivityState = 'idle';
 
   constructor(
     private ctx: CanvasRenderingContext2D,
@@ -36,7 +37,21 @@ export class PetEngine {
   }
 
   setActivity(state: ActivityState): void {
+    this.lastActivity = state;
     for (const pet of this.pets) pet.dispatch({ type: 'activity', state });
+    this.ensureRunning();
+  }
+
+  /** Begin dragging a pet. */
+  startDrag(pet: Pet): void {
+    pet.dispatch({ type: 'dragStart' });
+    this.ensureRunning();
+  }
+
+  /** Drop a pet and restore it to the current activity (so it keeps working if a session is live). */
+  endDrag(pet: Pet): void {
+    pet.dispatch({ type: 'dragEnd' });
+    pet.dispatch({ type: 'activity', state: this.lastActivity });
     this.ensureRunning();
   }
 
