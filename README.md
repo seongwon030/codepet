@@ -92,6 +92,20 @@ completion, Codex "working" comes from polling.
 
 ## Privacy
 
-The app periodically reads your process list (to detect Claude/Codex) and, in a future
-version, would modify `~/.claude` / `~/.codex` only with your explicit consent. v0.1 does
-**not** modify any config files.
+The app periodically reads your process list (to detect Claude/Codex). It modifies
+`~/.claude/settings.json` or `~/.codex/config.toml` **only** when you explicitly click a
+Connect action in the tray and confirm — each change is backed up and reversible. Nothing
+leaves your machine; hook events go to a localhost-only server (`127.0.0.1:38917`).
+
+## Credits
+
+Pet icons are Flaticon **free** icons and **require attribution** — full details in
+**[CREDITS.md](CREDITS.md)**:
+
+- Cat icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/cat-animal_8417812)
+- Pawprint icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/pawprint_6481940)
+- Duck icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/animals_1717994)
+- Seal icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/seal_6018583)
+- Whale icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/whale_1045140)
+
+_(Replace `AUTHOR` with the names from the linked pages — see CREDITS.md.)_
