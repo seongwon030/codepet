@@ -5,6 +5,11 @@ import type { PetState } from './state-machine';
 /** States that warrant full-rate animation; others run at a low battery FPS. */
 const ACTIVE_STATES: ReadonlyArray<PetState> = ['walking', 'working', 'tool', 'dragged'];
 const BATTERY_FPS = 8;
+// Cap the active (rAF) path: a transparent full-screen overlay rendered at the
+// display's 60–120Hz for long stretches can trip the GPU watchdog. 30fps is
+// plenty for the pet and roughly halves GPU compositing load.
+const TARGET_FPS = 30;
+const MIN_FRAME_MS = 1000 / TARGET_FPS;
 
 interface Size {
   width: number;
@@ -107,6 +112,12 @@ export class PetEngine {
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
+    }
+    // Frame-rate cap: rAF fires at 60–120Hz; skip frames to render at ~30fps.
+    // (The 8fps battery timer fires at 125ms, so it is never skipped here.)
+    if (now - this.last < MIN_FRAME_MS - 1) {
+      this.schedule();
+      return;
     }
     const dt = Math.min(100, now - this.last);
     this.last = now;

@@ -45,6 +45,7 @@ let paused = false;
 let roster: RosterEntry[] = [];
 let currentPetId = '';
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let recovering = false;
 
 /** Send a message to every live overlay window. */
 function broadcast(channel: string, payload: unknown): void {
@@ -89,6 +90,16 @@ function startCursorPoller(): void {
   }, 40);
 }
 
+/** Rebuild overlays after a renderer crash (debounced). */
+function recoverOverlays(): void {
+  if (recovering) return;
+  recovering = true;
+  setTimeout(() => {
+    recovering = false;
+    createOverlays();
+  }, 600);
+}
+
 /** (Re)create one overlay window per display. */
 function createOverlays(): void {
   for (const o of overlays) {
@@ -104,6 +115,11 @@ function createOverlays(): void {
       if (detector) win.webContents.send(IpcChannels.ActivityState, detector.state);
       if (currentPetId) win.webContents.send(IpcChannels.SelectPet, [currentPetId]);
       if (paused) win.webContents.send(IpcChannels.SetPaused, true);
+    });
+    win.webContents.on('render-process-gone', (_e, details) => {
+      // eslint-disable-next-line no-console
+      console.log('[desktop-pet] overlay renderer gone:', details.reason, '— recovering');
+      recoverOverlays();
     });
   }
   // eslint-disable-next-line no-console
@@ -345,6 +361,18 @@ app.whenReady().then(() => {
 
   // eslint-disable-next-line no-console
   console.log('[desktop-pet] cursor poller running.');
+});
+
+// GPU / utility / network subprocesses are auto-restarted by Chromium; just log.
+app.on('child-process-gone', (_e, details) => {
+  // eslint-disable-next-line no-console
+  console.log(
+    '[desktop-pet] child process gone:',
+    details.type,
+    details.reason,
+    'exit',
+    details.exitCode,
+  );
 });
 
 // Menu-bar app: keep running when overlays are hidden/closed.
