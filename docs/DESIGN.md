@@ -182,7 +182,7 @@ desktop-pet/
 │  └─ shared/
 │     └─ types.ts                # ActivityState, 이벤트 스키마 등
 ├─ assets/pets/                  # cat.png, cat.json, dog.png, ...
-└─ docs/superpowers/specs/2026-05-30-desktop-pet-design.md
+└─ docs/DESIGN.md
 ```
 
 ## 9. MVP 범위 & 로드맵

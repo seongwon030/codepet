@@ -50,6 +50,7 @@ npm run dist   # build .dmg for arm64 + x64 -> release/
 Quit a running instance with **Cmd+Shift+P** or tray → Quit.
 
 Custom pets: drop a 512px PNG in `assets/pets/` — see **[ASSETS.md](ASSETS.md)**.
+Architecture notes: **[docs/DESIGN.md](docs/DESIGN.md)**.
 
 ## Privacy
 
