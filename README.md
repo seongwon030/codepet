@@ -1,4 +1,4 @@
-# Desktop Pet 🐾
+# Codepet 🐾
 
 A macOS desktop pet that roams your wallpaper and **reacts to your Claude Code / Codex
 sessions** — when an agent is running, the pet gets to work; when things go quiet, it
