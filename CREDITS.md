@@ -1,28 +1,27 @@
 # Credits
 
-## Pet icons — Flaticon (free license → **attribution required**)
+## Pet icons — Flaticon (free license → attribution required)
 
 The five pet icons in `assets/pets/` are **Flaticon free icons**. The
 [Flaticon Free License](https://www.flaticon.com/legal#nav-flaticon-agreement)
-**requires visible attribution** wherever the app is distributed (docs, website,
-or an in-app About/Credits screen).
+requires this attribution wherever the app is distributed:
 
-Each Flaticon page shows the exact credit as **"… icons created by _AUTHOR_ – Flaticon"**.
-Open each link, copy the author, and replace `AUTHOR` below:
+- Cat icons created by [Miftahul Madani](https://www.flaticon.com/authors/miftahul-madani) – [Flaticon](https://www.flaticon.com/free-icon/cat-animal_8417812)
+- Pawprint icons created by [Vector Stall](https://www.flaticon.com/authors/vector-stall) – [Flaticon](https://www.flaticon.com/free-icon/pawprint_6481940)
+- Duck icons created by [Freepik](https://www.flaticon.com/authors/freepik) – [Flaticon](https://www.flaticon.com/free-icon/animals_1717994)
+- Seal icons created by [Miftahul Madani](https://www.flaticon.com/authors/miftahul-madani) – [Flaticon](https://www.flaticon.com/free-icon/seal_6018583)
+- Whale icons created by [Freepik](https://www.flaticon.com/authors/freepik) – [Flaticon](https://www.flaticon.com/free-icon/whale_1045140)
 
-| Pet | Source | Attribution |
-|-----|--------|-------------|
-| Cat | <https://www.flaticon.com/free-icon/cat-animal_8417812> | Cat icons created by **AUTHOR** – Flaticon |
-| Dog (paw) | <https://www.flaticon.com/free-icon/pawprint_6481940> | Pawprint icons created by **AUTHOR** – Flaticon |
-| Duck | <https://www.flaticon.com/free-icon/animals_1717994> | Duck icons created by **AUTHOR** – Flaticon |
-| Seal | <https://www.flaticon.com/free-icon/seal_6018583> | Seal icons created by **AUTHOR** – Flaticon |
-| Whale | <https://www.flaticon.com/free-icon/whale_1045140> | Whale icons created by **AUTHOR** – Flaticon |
+| Pet | Author | Icon |
+|-----|--------|------|
+| Cat | Miftahul Madani | <https://www.flaticon.com/free-icon/cat-animal_8417812> |
+| Dog (paw) | Vector Stall | <https://www.flaticon.com/free-icon/pawprint_6481940> |
+| Duck | Freepik | <https://www.flaticon.com/free-icon/animals_1717994> |
+| Seal | Miftahul Madani | <https://www.flaticon.com/free-icon/seal_6018583> |
+| Whale | Freepik | <https://www.flaticon.com/free-icon/whale_1045140> |
 
-> Tip: the attribution string is also shown in the download popup when you grab a
-> free icon from Flaticon. Paste those 5 strings here and you're done.
-
-To **drop the attribution requirement** entirely, replace these with your own art
-or true CC0 assets (see [ASSETS.md](ASSETS.md)).
+To drop the attribution requirement, replace these with your own art or true CC0
+assets (see [ASSETS.md](ASSETS.md)).
 
 ## Tray icon
 

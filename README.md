@@ -102,10 +102,8 @@ leaves your machine; hook events go to a localhost-only server (`127.0.0.1:38917
 Pet icons are Flaticon **free** icons and **require attribution** — full details in
 **[CREDITS.md](CREDITS.md)**:
 
-- Cat icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/cat-animal_8417812)
-- Pawprint icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/pawprint_6481940)
-- Duck icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/animals_1717994)
-- Seal icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/seal_6018583)
-- Whale icons created by _AUTHOR_ – [Flaticon](https://www.flaticon.com/free-icon/whale_1045140)
-
-_(Replace `AUTHOR` with the names from the linked pages — see CREDITS.md.)_
+- Cat icons created by [Miftahul Madani](https://www.flaticon.com/authors/miftahul-madani) – [Flaticon](https://www.flaticon.com/free-icon/cat-animal_8417812)
+- Pawprint icons created by [Vector Stall](https://www.flaticon.com/authors/vector-stall) – [Flaticon](https://www.flaticon.com/free-icon/pawprint_6481940)
+- Duck icons created by [Freepik](https://www.flaticon.com/authors/freepik) – [Flaticon](https://www.flaticon.com/free-icon/animals_1717994)
+- Seal icons created by [Miftahul Madani](https://www.flaticon.com/authors/miftahul-madani) – [Flaticon](https://www.flaticon.com/free-icon/seal_6018583)
+- Whale icons created by [Freepik](https://www.flaticon.com/authors/freepik) – [Flaticon](https://www.flaticon.com/free-icon/whale_1045140)
