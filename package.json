@@ -14,7 +14,7 @@
     "copy:assets": "mkdir -p dist/renderer dist/assets && cp src/renderer/*.html dist/renderer/ && cp -R assets/. dist/assets/",
     "start": "npm run build && electron .",
     "test": "npm run build && node --test dist/test/*.test.js",
-    "dist": "npm run build && electron-builder --mac dmg"
+    "dist": "npm run build && electron-builder --mac --arm64 --x64"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
