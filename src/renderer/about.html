@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+    />
+    <style>
+      body {
+        font-family: -apple-system, system-ui, sans-serif;
+        margin: 0;
+        padding: 24px 26px;
+        color: #1d1d1f;
+        background: #fafafa;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 2px;
+      }
+      .ver {
+        color: #888;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      p {
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 11px;
+        margin: 20px 0 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #999;
+      }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      a {
+        color: #1a73e8;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .foot {
+        margin-top: 20px;
+        font-size: 11px;
+        color: #aaa;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #1e1e1e;
+          color: #ededed;
+        }
+        h1 {
+          color: #fff;
+        }
+        a {
+          color: #6ca8ff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Desktop Pet 🐾</h1>
+    <div class="ver" id="ver">v0.1.0</div>
+    <p>A macOS desktop pet that roams your wallpaper and reacts to your Claude Code / Codex sessions.</p>
+
+    <h2>Art credits — Flaticon (free license)</h2>
+    <ul>
+      <li>Cat icons by <a href="https://www.flaticon.com/authors/miftahul-madani" target="_blank" rel="noopener">Miftahul Madani</a> – <a href="https://www.flaticon.com/free-icon/cat-animal_8417812" target="_blank" rel="noopener">Flaticon</a></li>
+      <li>Pawprint icons by <a href="https://www.flaticon.com/authors/vector-stall" target="_blank" rel="noopener">Vector Stall</a> – <a href="https://www.flaticon.com/free-icon/pawprint_6481940" target="_blank" rel="noopener">Flaticon</a></li>
+      <li>Duck icons by <a href="https://www.flaticon.com/authors/freepik" target="_blank" rel="noopener">Freepik</a> – <a href="https://www.flaticon.com/free-icon/animals_1717994" target="_blank" rel="noopener">Flaticon</a></li>
+      <li>Seal icons by <a href="https://www.flaticon.com/authors/miftahul-madani" target="_blank" rel="noopener">Miftahul Madani</a> – <a href="https://www.flaticon.com/free-icon/seal_6018583" target="_blank" rel="noopener">Flaticon</a></li>
+      <li>Whale icons by <a href="https://www.flaticon.com/authors/freepik" target="_blank" rel="noopener">Freepik</a> – <a href="https://www.flaticon.com/free-icon/whale_1045140" target="_blank" rel="noopener">Flaticon</a></li>
+    </ul>
+
+    <div class="foot">Made with Electron.</div>
+
+    <script>
+      const v = new URLSearchParams(location.search).get('v');
+      if (v) document.getElementById('ver').textContent = 'v' + v;
+    </script>
+  </body>
+</html>

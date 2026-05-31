@@ -8,6 +8,7 @@ import {
   Menu,
   nativeImage,
   dialog,
+  shell,
 } from 'electron';
 import * as path from 'path';
 import psList from 'ps-list';
@@ -39,6 +40,7 @@ let overlays: OverlayCtx[] = [];
 let detector: ActivityDetector | null = null;
 let hookServer: HookServer | null = null;
 let tray: Tray | null = null;
+let aboutWin: BrowserWindow | null = null;
 let paused = false;
 let roster: RosterEntry[] = [];
 let currentPetId = '';
@@ -122,6 +124,7 @@ function buildTrayMenu(): Menu {
 
   const template: Electron.MenuItemConstructorOptions[] = [
     { label: 'Desktop Pet', enabled: false },
+    { label: 'About Desktop Pet…', click: openAbout },
     { type: 'separator' },
     roster.length
       ? { label: 'Pet', submenu: petSubmenu }
@@ -182,6 +185,42 @@ function updateTrayIcon(petId: string): void {
   if (!tray || !petId) return;
   const img = nativeImage.createFromPath(path.join(__dirname, '../assets/pets', `${petId}.png`));
   if (!img.isEmpty()) tray.setImage(img.resize({ height: 18 }));
+}
+
+/** Open the About / credits window (shows the required Flaticon attribution). */
+function openAbout(): void {
+  if (aboutWin && !aboutWin.isDestroyed()) {
+    aboutWin.show();
+    aboutWin.focus();
+    return;
+  }
+  aboutWin = new BrowserWindow({
+    width: 460,
+    height: 470,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: 'About Desktop Pet',
+    show: false,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+  aboutWin.setMenuBarVisibility(false);
+  aboutWin.loadFile(path.join(__dirname, '../renderer/about.html'), {
+    search: `v=${app.getVersion()}`,
+  });
+  // open external links (Flaticon credits) in the default browser
+  aboutWin.webContents.setWindowOpenHandler(({ url }) => {
+    void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  aboutWin.once('ready-to-show', () => {
+    app.focus({ steal: true }); // surface the window from a menu-bar (LSUIElement) app
+    aboutWin?.show();
+  });
+  aboutWin.on('closed', () => {
+    aboutWin = null;
+  });
 }
 
 /** Tray action: install Claude Code hooks after explicit consent. */
